@@ -7,27 +7,29 @@ password = "Akgec@2026"  # ⚠️ Replace this with your actual Neo4j password
 
 driver = GraphDatabase.driver(uri, auth=(username, password))
 
-def find_disease_from_symptom(symptom):
-    query = """
-    MATCH (s:Symptom {name: $symptom})<-[:HAS_SYMPTOM]-(d:Disease)
-    RETURN d.name AS disease
-    """
+def fetch_diseases_and_bodyparts(symptom):
     with driver.session(database="medical-kg") as session:
+        query = """
+        MATCH (s:Symptom {name: $symptom})<-[:HAS_SYMPTOM]-(d:Disease)-[:AFFECTS]->(b:BodyPart)
+        RETURN d.name AS disease, b.name AS body_part
+        """
         result = session.run(query, symptom=symptom.capitalize())
-        diseases = [record["disease"] for record in result]
-        return diseases
+        data = result.data()
+        return data
 
 def main():
-    print("🔍 Medical Knowledge Assistant")
-    user_input = input("Enter a symptom (e.g., Fever, Cough, Chest Pain): ")
-    diseases = find_disease_from_symptom(user_input)
+    print("🔍 Medical Knowledge - Symptom to Disease Info")
+    symptom = input("Enter a symptom (e.g., Fever, Cough): ").strip()
     
-    if diseases:
-        print("🦠 Possible diseases for symptom '{}':".format(user_input))
-        for disease in diseases:
-            print(" -", disease)
-    else:
-        print("❌ No disease found for this symptom.")
+    results = fetch_diseases_and_bodyparts(symptom)
+
+    if not results:
+        print("❌ No data found for this symptom.")
+        return
+
+    print(f"\n🔎 Results for Symptom: {symptom.capitalize()}")
+    for record in results:
+        print(f"🦠 Disease: {record['disease']} → 🏷 Affects: {record['body_part']}")
 
 if __name__ == "__main__":
     main()
