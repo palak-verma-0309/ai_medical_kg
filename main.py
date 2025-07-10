@@ -13,7 +13,11 @@ def fetch_disease_details(symptom):
         MATCH (s:Symptom {name: $symptom})<-[:HAS_SYMPTOM]-(d:Disease)
         OPTIONAL MATCH (d)-[:AFFECTS]->(b:BodyPart)
         OPTIONAL MATCH (d)-[:TREATED_BY]->(t:Treatment)
-        RETURN d.name AS disease, collect(DISTINCT b.name) AS body_parts, collect(DISTINCT t.name) AS treatments
+        OPTIONAL MATCH (c:Cause)-[:CAUSES]->(d)
+        RETURN d.name AS disease, 
+               collect(DISTINCT b.name) AS body_parts, 
+               collect(DISTINCT t.name) AS treatments,
+               collect(DISTINCT c.name) AS causes
         """
         result = session.run(query, symptom=symptom.capitalize())
         return result.data()
@@ -35,6 +39,8 @@ def main():
             print(f"   🏷 Affects: {', '.join(filter(None, record['body_parts']))}")
         if record["treatments"]:
             print(f"   💊 Treated by: {', '.join(filter(None, record['treatments']))}")
+        if record["causes"]:
+            print(f"   ⚠️ Caused by: {', '.join(filter(None, record['causes']))}")
 
 if __name__ == "__main__":
     main()
