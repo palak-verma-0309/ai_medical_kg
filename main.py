@@ -107,8 +107,14 @@ if user_input:
                 else:
                     for r in results:
                         sentence = generate_sentence(r, relation, node)
-                        st.success(f"🔁 {sentence}")
+                        if isinstance(sentence, dict) and "text" in sentence:
+                            st.success(sentence["text"].strip())
+                        else:
+                            st.success(sentence.strip())
             else:
                 for r in results:
                     sentence = generate_sentence(node, relation, r)
-                    st.success(f"🗣️ {sentence}")
+                    if isinstance(sentence, dict) and "text" in sentence:
+                        st.success(sentence["text"].strip())
+                    else:
+                        st.success(sentence.strip())
